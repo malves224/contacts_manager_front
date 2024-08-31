@@ -1,7 +1,7 @@
 <template lang="">
   <div class="login-container" >
         <b-card class="card-login ">
-          <b-form class="form-login" >
+          <b-form v-if="!toggleCadastrate" class="form-login" >
             <b-form-group label="Email" label-for="email">
               <b-form-input id="email" v-model="email" type="email" required placeholder="Email"></b-form-input>
             </b-form-group>
@@ -9,16 +9,72 @@
               <b-form-input id="password" v-model="password" type="password" required placeholder="Senha"></b-form-input>
             </b-form-group>
             <div>
-              <b-button  class="me-3" type="submit" variant="outline-primary">Acessar</b-button>
-              <b-button variant="outline-info">Cadastrar </b-button>
+              <b-button class="me-3" @click="toggleCadastrate = true" variant="outline-info">Cadastrar </b-button>
+              <b-button @click="login" variant="outline-primary">Acessar</b-button>
+            </div>
+          </b-form>
+          <b-form v-if="toggleCadastrate" class="form-login" >
+            <b-form-group label="Name" label-for="name">
+              <b-form-input id="name" v-model="name" required placeholder="Nome"></b-form-input>
+            </b-form-group>
+            <b-form-group label="Email" label-for="email">
+              <b-form-input id="email" v-model="email" type="email" required placeholder="Email"></b-form-input>
+            </b-form-group>
+            <b-form-group label="Senha" label-for="password">
+              <b-form-input id="password" v-model="password" type="password" required placeholder="Senha"></b-form-input>
+            </b-form-group>
+            <div>
+              <b-button class="me-3" @click="toggleCadastrate = false" variant="outline-info">Cancelar </b-button>
+              <b-button @click="register" variant="outline-primary">Cadastrar</b-button>
             </div>
           </b-form>
         </b-card>
       </div>
 </template>
 <script>
+import UserService from '../services/UserService';
+import Swal from 'sweetalert2';
 export default {
+  beforeMount() {
+    const token = this.userService.storage.get().token
+    if (token) {
+      this.$router.push('/contacts')
+    }
+  },
+  data() {
+    return {
+      toggleCadastrate: false,
+      name: '',
+      email: '',
+      password: '',
+      cadastred: false,
+      userService: new UserService()
+    }
+  },
+  methods: {
+    async login() {
+      try {
+        await this.userService.login(this.email, this.password)
+        this.$router.push('/contacts')
+      } catch (error) {
+        Swal.fire("Erro!", error.response.data.errors[0], "error")
+      }
 
+    },
+    async register() {
+      try {
+        await this.userService.register(this.name, this.email, this.password)
+        this.cadastred = true
+        this.toggleCadastrate = false
+        this.password = ''
+        Swal.fire("Cadastro efetuado com sucesso!", "Entre com a sua nova conta para continuar.", "success")
+      } catch (error) {
+        if (error.response.status === 422) {
+          Swal.fire("Erro!", error.response.data.errors[0], "error")
+        }
+      }
+    }
+  },
 }
 </script>
 <style>
@@ -33,7 +89,7 @@ export default {
 
 .card-login {
   width: 40vh;
-  height: 280px;
+  min-height: 250px;
 }
 
 .form-login {
