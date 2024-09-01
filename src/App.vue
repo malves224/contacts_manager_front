@@ -16,4 +16,13 @@ export default {
   text-align: center;
   color: #2c3e50;
 }
+.button-none {
+  background: none !important;
+  color: inherit !important;
+  border: none !important;
+  padding: 0 !important;
+  font: inherit !important;
+  cursor: pointer !important;
+  outline: inherit !important;
+}
 </style>

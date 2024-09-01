@@ -7,6 +7,7 @@
             </b-form-group>
             <b-form-group label="Senha" label-for="password">
               <b-form-input id="password" v-model="password" type="password" required placeholder="Senha"></b-form-input>
+              <b-button v-if="email" class="button-none" @click="forgotPassword">Esqueci minha senha</b-button>
             </b-form-group>
             <div>
               <b-button class="me-3" @click="toggleCadastrate = true" variant="outline-info">Cadastrar </b-button>
@@ -70,7 +71,17 @@ export default {
         Swal.fire("Cadastro efetuado com sucesso!", "Entre com a sua nova conta para continuar.", "success")
       } catch (error) {
         if (error.response.status === 422) {
-          Swal.fire("Erro!", error.response.data.errors[0], "error")
+          Swal.fire("Erro!", error?.response?.data?.errors[0], "error")
+        }
+      }
+    },
+    async forgotPassword() {
+      try {
+        await this.userService.forgotPassword(this.email)
+        Swal.fire("Email enviado com sucesso!", "Verifique seu email para recuperar sua senha.", "success")
+      } catch (error) {
+        if (error.response?.data?.errors) {
+          Swal.fire("Erro!", error?.response?.data?.errors[0], "error")
         }
       }
     }
