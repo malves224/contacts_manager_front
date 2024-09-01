@@ -1,5 +1,6 @@
 <template lang="">
   <div>
+    <CreateContact :open="modalOpen" @close="modalOpen = false"></CreateContact>
     <div class="navbar-container">
       <b-button variant="outline-danger">Sair</b-button>
     </div>
@@ -7,9 +8,7 @@
         <div class="list-contacts-container">
           <div class="search-contacts-container">
             <b-form-input placeholder="Pesquisar"></b-form-input>
-            <b-button variant="outline-primary">
-              Criar contato
-            </b-button>
+            <b-button @click="openModal">Criar contato</b-button>
           </div>
           <div class="items-contacts-container">
             <b-list-group>
@@ -27,16 +26,27 @@
 </template>
 <script>
 import UserService from '../services/UserService';
+import CreateContact from '../components/CreateContact';
+
 export default {
+  components: {
+    CreateContact
+    },
   data() {
     return {
-      userService: new UserService()
+      modalOpen: false,
+      userService: new UserService(),
     }
   },
   beforeMount() {
     const token = this.userService.storage.get().token
     if (!token) {
       this.$router.push('/login')
+    }
+  },
+  methods: {
+    openModal() {
+      this.modalOpen = true
     }
   },
 }
