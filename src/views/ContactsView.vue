@@ -22,6 +22,9 @@
               tbody-tr-class="contact-row"
               @row-clicked="onRowClicked"
             >
+            <template #cell(id)="{item}">
+              <i class="bi bi-trash cursor-pointer" @click="deleteItem(item.id)"></i>
+            </template>
             </b-table>
           </div>
         </div>
@@ -62,7 +65,8 @@ export default {
       fields: [
         { key: 'name', label: 'Nome' },
         { key: 'phone', label: 'Telefone' },
-        { key: 'doc', label: 'CPF' }
+        { key: 'doc', label: 'CPF' },
+        { key: 'id', label: 'Ação' }
       ],
       items: [],
       search: {
@@ -94,9 +98,15 @@ export default {
       this.getData()
     },
     onRowClicked(item) {
-      this.markers.push([Number(item.address.latitude), Number(item.address.longitude)])
+      if (!this.markers.find(marker => marker[0] === Number(item.address.latitude) && marker[1] === Number(item.address.longitude))) {
+        this.markers.push([Number(item.address.latitude), Number(item.address.longitude)])
+      }
       this.center = [Number(item.address.latitude), Number(item.address.longitude)]
       this.zoom = 18
+    },
+    async deleteItem(id) {
+      await this.contactService.delete(id)
+      this.getData()
     },
     openModal() {
       this.modalOpen = true
@@ -146,7 +156,7 @@ export default {
   z-index: 2;
 }
 
-.contact-row {
+.cursor-pointer {
   cursor: pointer;
 }
 </style>
