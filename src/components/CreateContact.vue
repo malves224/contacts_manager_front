@@ -191,6 +191,7 @@ export default {
         await this.contactService.create(payload);
         this.clear();
         this.$emit('close');
+        this.$emit('created');
         Swal.fire({
           title: 'Contato cadastrado com sucesso',
           icon: 'success',

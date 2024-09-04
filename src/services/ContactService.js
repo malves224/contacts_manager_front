@@ -9,6 +9,11 @@ class ContactService extends HttpService {
         const response = await this.client.post('/contacts', contact)
         return response.data
     }
+
+    async search(params) {
+        const response = await this.client.get(`/contacts/search?value=${params.value}&order=${params.order}`)
+        return response.data
+    }
 }
 
 export default ContactService;
