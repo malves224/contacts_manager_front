@@ -19,12 +19,24 @@
             <b-table 
               :items="items"
               :fields="fields"
+              tbody-tr-class="contact-row"
+              @row-clicked="onRowClicked"
             >
             </b-table>
           </div>
         </div>
         <div class="google-maps-container">
-          maps      
+          <l-map ref="map" v-model:zoom="zoom" :center="center">
+            <l-tile-layer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              layer-type="base"
+              name="OpenStreetMap"
+            >
+    
+          </l-tile-layer>
+            <l-marker v-for="marker in markers" :key="marker[0]" :lat-lng="marker">
+            </l-marker>
+          </l-map>
         </div>
     </div>
   </div>
@@ -33,10 +45,14 @@
 import UserService from '../services/UserService';
 import CreateContact from '../components/CreateContact';
 import ContactService from '@/services/ContactService';
+import { LMap, LTileLayer, LMarker } from "@vue-leaflet/vue-leaflet";
 
 export default {
   components: {
-    CreateContact
+    CreateContact,
+    LMap,
+    LTileLayer,
+    LMarker
   },
   data() {
     return {
@@ -53,7 +69,10 @@ export default {
         value: '',
         order: 'asc'
       },
+      markers: [],
+      center: [-23.5906812, -46.4123386],
       loading: null,
+      zoom: 4
     }
   },
   beforeMount() {
@@ -73,6 +92,11 @@ export default {
         this.search.order = 'asc'
       }
       this.getData()
+    },
+    onRowClicked(item) {
+      this.markers.push([Number(item.address.latitude), Number(item.address.longitude)])
+      this.center = [Number(item.address.latitude), Number(item.address.longitude)]
+      this.zoom = 18
     },
     openModal() {
       this.modalOpen = true
@@ -114,4 +138,15 @@ export default {
 .search-contacts-container {
   display: flex;
   flex-direction: row;
-}</style>
+}
+
+.google-maps-container {
+  width: 60%;
+  height: 500px;
+  z-index: 2;
+}
+
+.contact-row {
+  cursor: pointer;
+}
+</style>
