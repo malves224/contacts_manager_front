@@ -15,20 +15,30 @@
       </b-form-group>
       <b-form-group label="Endereço" label-for="address">
         <b-form-group label-for="postal_code">
-          <b-form-input id="postal_code" v-model="postal_code" placeholder="CEP"></b-form-input>
+          <b-form-input trim :disabled="cepLoading" :formatter="(value) => value.replace(/[a-zA-Z]/g, '')"
+            :state="cepBeValid" id="postal_code" @input="handleCep" v-model="postal_code" placeholder="Digite seu CEP..."></b-form-input>  
           <span v-if="v$.postal_code.$error">CEP é obrigatório.</span>
+          <span style="color: red" v-if="!cepBeValid && cepResponseError">{{ cepResponseError }}</span>
         </b-form-group>
         <b-form-group label-for="street">
-          <b-form-input id="street" v-model="street" placeholder="Rua"></b-form-input>
+          <b-form-input :disabled="cepLoading" id="street" v-model="street" placeholder="Rua"></b-form-input>
           <span v-if="v$.street.$error">Rua é obrigatório.</span>
         </b-form-group>
         <b-form-group label-for="city">
-          <b-form-input id="city" v-model="city" placeholder="Cidade"></b-form-input>
+          <b-form-input :disabled="cepLoading" id="city" v-model="city" placeholder="Cidade"></b-form-input>
           <span v-if="v$.city.$error">Cidade é obrigatório.</span>
         </b-form-group>
         <b-form-group label-for="state">
-          <b-form-input id="state" v-model="state" placeholder="Estado"></b-form-input>
+          <b-form-input :disabled="cepLoading" id="state" v-model="state" placeholder="Estado"></b-form-input>
           <span v-if="v$.state.$error">Estado é obrigatório.</span>
+        </b-form-group>
+        <b-form-group label-for="district">
+          <b-form-input :disabled="cepLoading" id="district" v-model="district" placeholder="Bairro"></b-form-input>
+          <span v-if="v$.district.$error">Bairro é obrigatório.</span>
+        </b-form-group>
+        <b-form-group label-for="number">
+          <b-form-input id="number" v-model="number" placeholder="Numero"></b-form-input>
+          <span v-if="v$.number.$error">Numero é obrigatório.</span>
         </b-form-group>
         <b-form-group label-for="complement">
           <b-form-input id="complement" v-model="complement" placeholder="Complemento"></b-form-input>
@@ -44,6 +54,7 @@ import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 import { helpers } from '@vuelidate/validators';
 import { isCPF } from 'validation-br'
+import CepService from '../services/CepService';
 
 const isValidCPFFormat = helpers.withMessage('', value => {
   return isCPF(value);
@@ -55,8 +66,13 @@ export default {
   },
   data() {
     return {
+      cepBeValid: null,
+      cepService: new CepService(),
+      cepLoading: false,
+      cepResponseError: '',
       name: '',
       doc: '',
+      district: '',
       phone: '',
       street: '',
       city: '',
@@ -87,11 +103,44 @@ export default {
       },
       postal_code: {
         required,
+      },
+      number: {
+        required,
+      },
+      district: {
+        required,
       }
     }
   },
   props: ['open'],
   methods: {
+    handleCep(value) {
+      if (value.length >= 8) {
+        this.searchCep();
+      }
+    },
+    async searchCep() {
+      try {
+        this.cepBeValid = null;
+        this.cepLoading = true;
+        const data = await this.cepService.search(this.postal_code)
+        if(data.error) {
+          this.cepBeValid = false;
+          this.cepResponseError = 'CEP não encontrado.';
+        }
+        this.postal_code = data.cep;
+        this.street = data.logradouro;
+        this.city = data.localidade;
+        this.state = data.uf;
+        this.district = data.bairro;
+        this.cepBeValid = true;
+      } catch (error) {
+        this.cepBeValid = false;
+          this.cepResponseError = 'CEP não encontrado.';
+      } finally {
+        this.cepLoading = false;
+      }
+    },
     close({ target }) {
       if (target.className === 'modal-contact') {
         this.$emit('close')
