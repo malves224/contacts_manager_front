@@ -11,6 +11,10 @@ class LocalStorage {
   set(data) {
       return localStorage.setItem(this.key, JSON.stringify(data));
   }
+
+  clear() {
+      return localStorage.removeItem(this.key);
+  }
 }
 
 export default LocalStorage

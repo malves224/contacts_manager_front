@@ -1,5 +1,6 @@
 import axios from 'axios';
 import LocalStorage from './LocalStorage';
+import router from './../router';
 
 class HttpService {
   constructor(url = undefined) {
@@ -17,6 +18,19 @@ class HttpService {
         return config;
       },
       (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    this.client.interceptors.response.use(
+      (response) => {
+        return response;
+      },
+      (error) => {
+        if (error.status === 401) {
+          this.storage.clear();
+          router.push('/login')
+        }
         return Promise.reject(error);
       }
     );

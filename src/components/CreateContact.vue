@@ -44,7 +44,7 @@
           <b-form-input id="complement" v-model="complement" placeholder="Complemento"></b-form-input>
         </b-form-group>
       </b-form-group>
-      <b-button class="me-2" variant="outline-danger" @click="this.$emit('close')">Cancelar</b-button>
+      <b-button class="me-2" variant="outline-danger" @click="this.$emit('close'); clear()">Cancelar</b-button>
       <b-button type="submit" variant="outline-primary">Cadastrar</b-button>
     </b-form>
   </div>
@@ -55,6 +55,8 @@ import { required } from '@vuelidate/validators'
 import { helpers } from '@vuelidate/validators';
 import { isCPF } from 'validation-br'
 import CepService from '../services/CepService';
+import ContactService from '../services/ContactService';
+import Swal from 'sweetalert2';
 
 const isValidCPFFormat = helpers.withMessage('', value => {
   return isCPF(value);
@@ -70,6 +72,8 @@ export default {
       cepService: new CepService(),
       cepLoading: false,
       cepResponseError: '',
+      number: '',
+      contactService: new ContactService(),
       name: '',
       doc: '',
       district: '',
@@ -112,6 +116,9 @@ export default {
       }
     }
   },
+  unmounted() {
+
+  },
   props: ['open'],
   methods: {
     handleCep(value) {
@@ -119,36 +126,87 @@ export default {
         this.searchCep();
       }
     },
+    clear() {
+      this.postal_code = '';
+      this.street = '';
+      this.city = '';
+      this.state = '';
+      this.district = '';
+      this.number = '';
+      this.complement = '';
+      this.name = '';
+      this.doc = '';
+      this.phone = '';
+      this.cepBeValid = null;
+      this.cepLoading = false;
+      this.cepResponseError = '';
+    },
     async searchCep() {
       try {
         this.cepBeValid = null;
         this.cepLoading = true;
         const data = await this.cepService.search(this.postal_code)
-        if(data.error) {
+        if(data.erro) {
           this.cepBeValid = false;
           this.cepResponseError = 'CEP não encontrado.';
-        }
-        this.postal_code = data.cep;
-        this.street = data.logradouro;
-        this.city = data.localidade;
-        this.state = data.uf;
-        this.district = data.bairro;
-        this.cepBeValid = true;
+        } else {
+          this.postal_code = data.cep;
+          this.street = data.logradouro;
+          this.city = data.localidade;
+          this.state = data.uf;
+          this.district = data.bairro;
+          this.cepBeValid = true;
+      }
       } catch (error) {
         this.cepBeValid = false;
-          this.cepResponseError = 'CEP não encontrado.';
+        this.cepResponseError = 'CEP não encontrado.';
       } finally {
         this.cepLoading = false;
       }
     },
     close({ target }) {
       if (target.className === 'modal-contact') {
+        this.clear();
         this.$emit('close')
       }
     },
     async submitForm() {
       const isFormCorrect = await this.v$.$validate()
-      if (isFormCorrect) return
+      if (!isFormCorrect || !this.cepBeValid) return;
+      const payload = {
+        name: this.name,
+        doc: this.doc,
+        phone: this.phone,
+        address_attributes: {
+          postal_code: this.postal_code,
+          street: this.street,
+          city: this.city,
+          state: this.state,
+          district: this.district,
+          complement: this.complement,
+          number: this.number
+        }
+      }
+      try {
+        await this.contactService.create(payload);
+        this.clear();
+        this.$emit('close');
+        Swal.fire({
+          title: 'Contato cadastrado com sucesso',
+          icon: 'success',
+          confirmButtonText: 'Ok'
+        })
+      } catch (error) {
+        if(error.response.status === 422) {
+          Swal.fire({
+            title: 'Erro ao cadastrar contato',
+            text: error.response.data.errors.join("\n"),
+            icon: 'error',
+            confirmButtonText: 'Ok'
+          })
+        }
+      }
+
     }
   }
 }
@@ -162,14 +220,14 @@ export default {
   width: 100%;
   height: 100vh;
   background-color: #21252987;
-  z-index: 99999;
+  z-index: 5;
 }
 
 .form-create-contact {
   min-height: 60%;
   width: 40%;
   background-color: white;
-  z-index: 999999;
+  z-index: 6;
 }
 
 .form-create-contact {
