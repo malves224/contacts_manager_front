@@ -19,6 +19,17 @@ class ContactService extends HttpService {
         const response = await this.client.delete(`/contacts/${id}`)
         return response.data
     }
+
+    async get(id) {
+        const response = await this.client.get(`/contacts/${id}`)
+        return response.data
+    }
+
+    async update(contact) {
+        console.log('clinete', this)
+        const response = await this.client.put(`/contacts/${contact.id}`, contact)
+        return response.data
+    }
 }
 
 export default ContactService;

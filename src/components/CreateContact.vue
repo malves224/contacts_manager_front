@@ -45,7 +45,7 @@
         </b-form-group>
       </b-form-group>
       <b-button class="me-2" variant="outline-danger" @click="this.$emit('close'); clear()">Cancelar</b-button>
-      <b-button type="submit" variant="outline-primary">Cadastrar</b-button>
+      <b-button type="submit" variant="outline-primary">{{id ? 'Atualizar' : 'Cadastrar'}}</b-button>
     </b-form>
   </div>
 </template>
@@ -73,6 +73,8 @@ export default {
       cepLoading: false,
       cepResponseError: '',
       number: '',
+      latitude: '',
+      longitude: '',
       contactService: new ContactService(),
       name: '',
       doc: '',
@@ -116,14 +118,36 @@ export default {
       }
     }
   },
-  unmounted() {
-
+  watch: {
+    async open(newValue) {
+      if (newValue && this.id) {
+        this.getData()
+      }
+    },
   },
-  props: ['open'],
+  props: ['open','id'],
   methods: {
     handleCep(value) {
       if (value.length >= 8) {
         this.searchCep();
+      }
+    },
+    async getData() {
+      if (this.id) {
+        const data = await this.contactService.get(this.id)
+        this.name = data.name;
+        this.doc = data.doc;
+        this.phone = data.phone;
+        this.street = data.address.street;
+        this.city = data.address.city;
+        this.state = data.address.state;
+        this.district = data.address.district;
+        this.number = data.address.number;
+        this.complement = data.address.complement;
+        this.postal_code = data.address.postal_code;
+        this.latitude = data.address.latitude;
+        this.longitude = data.address.longitude;
+        this.cepBeValid = true;
       }
     },
     clear() {
@@ -140,6 +164,7 @@ export default {
       this.cepBeValid = null;
       this.cepLoading = false;
       this.cepResponseError = '';
+      this.v$.$errors = {};
     },
     async searchCep() {
       try {
@@ -173,7 +198,7 @@ export default {
     async submitForm() {
       const isFormCorrect = await this.v$.$validate()
       if (!isFormCorrect || !this.cepBeValid) return;
-      const payload = {
+      let payload = {
         name: this.name,
         doc: this.doc,
         phone: this.phone,
@@ -184,16 +209,22 @@ export default {
           state: this.state,
           district: this.district,
           complement: this.complement,
-          number: this.number
+          number: this.number,
+          latitude: this.latitude,
+          longitude: this.longitude
         }
       }
       try {
-        await this.contactService.create(payload);
+        if (this.id) {
+          await this.contactService.update({id: this.id, ...payload});
+        } else {
+          await this.contactService.create(payload);
+        }
         this.clear();
         this.$emit('close');
         this.$emit('created');
         Swal.fire({
-          title: 'Contato cadastrado com sucesso',
+          title: `Contato ${this.id ? 'atualizado' : 'cadastrado'} com sucesso`,
           icon: 'success',
           confirmButtonText: 'Ok'
         })

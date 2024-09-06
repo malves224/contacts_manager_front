@@ -1,18 +1,20 @@
 <template lang="">
   <div>
-    <CreateContact @created="getData" :open="modalOpen" @close="modalOpen = false"></CreateContact>
+    <CreateContact :id="idToEdit" @updated="contactUpdated"  @created="getData" :open="modalOpen" @close="modalOpen = false"></CreateContact>
     <div class="navbar-container">
-      <b-button variant="outline-danger">Sair</b-button>
+      <h1>Contatos</h1>
+      <b-button @click="deleteSelf" variant="outline-danger">Deletar conta</b-button>
+      <b-button @click="logout" variant="outline-danger">Sair</b-button>
     </div>
     <div class="contacts-container">
         <div class="list-contacts-container">
           <div class="search-contacts-container">
-            <b-form-input @input="getData" v-model="search.value" placeholder="Pesquisar"></b-form-input>
+            <b-form-input class="me-3" @input="getData" v-model="search.value" placeholder="Pesquisar"></b-form-input>
             <b-button-group class="mr-1">
             <b-button @click="togleOrder" title="Align left">
               <i class="bi" :class="search.order === 'asc' ? 'bi-sort-down-alt' : 'bi-sort-up'"></i> 
             </b-button>
-            <b-button @click="openModal">Criar contato</b-button>
+            <b-button @click="openModal(null)">Criar</b-button>
             </b-button-group>
           </div>
           <div class="items-contacts-container">
@@ -23,6 +25,7 @@
               @row-clicked="onRowClicked"
             >
             <template #cell(id)="{item}">
+              <i class="me-2 bi bi-pen cursor-pointer" @click="openModal(item.id)"></i>
               <i class="bi bi-trash cursor-pointer" @click="deleteItem(item.id)"></i>
             </template>
             </b-table>
@@ -49,6 +52,7 @@ import UserService from '../services/UserService';
 import CreateContact from '../components/CreateContact';
 import ContactService from '@/services/ContactService';
 import { LMap, LTileLayer, LMarker } from "@vue-leaflet/vue-leaflet";
+import Swal from 'sweetalert2';
 
 export default {
   components: {
@@ -60,6 +64,7 @@ export default {
   data() {
     return {
       modalOpen: false,
+      idToEdit: null,
       userService: new UserService(),
       contactService: new ContactService(),
       fields: [
@@ -89,6 +94,31 @@ export default {
     this.getData()
   },
   methods: {
+    async deleteSelf() {
+      Swal.fire({
+        title: 'Tem certeza que deseja deletar sua conta?',
+        text: 'Isto não pode ser desfeito e todos os seus contatos serão deletados também.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sim',
+        cancelButtonText: 'Não'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            await this.userService.delete();
+            this.$router.push('/login');
+          } catch (error) {
+            console.log(error)
+          }
+        }
+      })
+    },
+    logout() {
+      this.userService.storage.clear();
+      this.$router.push('/login');
+    },
     togleOrder() {
       if (this.search.order === 'asc') {
         this.search.order = 'desc'
@@ -108,7 +138,8 @@ export default {
       await this.contactService.delete(id)
       this.getData()
     },
-    openModal() {
+    openModal(id) {
+      this.idToEdit = id
       this.modalOpen = true
     },
     async getData() {
@@ -128,10 +159,10 @@ export default {
 <style >
 .navbar-container {
   display: flex;
-  justify-content: end;
-  padding: 0 20px;
+  justify-content: space-between;
+  padding: 2px 20px;
+  margin-bottom: 10px;
   width: 100%;
-  background-color: aquamarine;
   height: 40px;
 }
 
@@ -143,11 +174,13 @@ export default {
   display: flex;
   width: 40%;
   flex-direction: column;
+  margin-right: 20px;
 }
 
 .search-contacts-container {
   display: flex;
   flex-direction: row;
+  padding: 10px;
 }
 
 .google-maps-container {
