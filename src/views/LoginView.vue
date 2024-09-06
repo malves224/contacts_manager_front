@@ -10,7 +10,7 @@
               <b-button v-if="email" class="button-none" @click="forgotPassword">Esqueci minha senha</b-button>
             </b-form-group>
             <div>
-              <b-button class="me-3" @click="toggleCadastrate = true" variant="outline-info">Cadastrar </b-button>
+              <b-button class="me-3" @click="toggleCadastrate = true; this.password = '';" variant="outline-info">Cadastrar </b-button>
               <b-button @click="login" variant="outline-primary">Acessar</b-button>
             </div>
           </b-form>
