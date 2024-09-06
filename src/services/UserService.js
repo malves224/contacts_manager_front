@@ -20,6 +20,12 @@ class UserService extends HttpService {
     const response = await this.client.post('/forgot_password/', { email })
     return response.data
   }
+
+  async delete() {
+    const response = await this.client.delete('/users/self_destroy')
+    this.storage.clear()
+    return response.data
+  }
   
 }
 export default UserService;
